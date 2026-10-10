@@ -9,6 +9,7 @@ import androidx.credentials.ClearCredentialStateRequest;
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
 import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CredentialOption;
 import androidx.credentials.CustomCredential;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.GetCredentialCancellationException;
@@ -18,6 +19,7 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
 import com.google.appinventor.components.annotations.DesignerComponent;
@@ -31,8 +33,8 @@ import com.google.appinventor.components.runtime.ComponentContainer;
 import com.google.appinventor.components.runtime.EventDispatcher;
 
 @DesignerComponent(
-	version = 1,
-	versionName = "1.0",
+	version = 2,
+	versionName = "1.1",
 	description = "Google Credential Manager. Developed by Yash Srivastava.",
 	iconName = "icon.png"
 )
@@ -76,18 +78,26 @@ public class GCM extends AndroidNonvisibleComponent {
 	}
 
 	// Functions
-	@SimpleFunction("Shows the Google account chooser and signs the user in. "
-			+ "Triggers SignInSuccessful on success, SignInCancelled if the user dismisses "
-			+ "the chooser, or ErrorOccurred on failure.")
+	@SimpleFunction("Shows the Google sign-in bottom sheet. "
+			+ "Signs in silently if AutoSelect is on and only one authorized account exists.")
+	public void ShowSignInSheet() {
+		if (webClientId == null || webClientId.trim().isEmpty()) {
+			ErrorOccurred("WebClientId is not set");
+			return;
+		}
+		handleSign(buildSheetOption(true), true);
+	}
+
+	@SimpleFunction("Shows the Google account chooser.")
 	public void SignInWithGoogle() {
 		if (webClientId == null || webClientId.trim().isEmpty()) {
 			ErrorOccurred("WebClientId is not set");
 			return;
 		}
-		requestGoogleId(true);
+		handleSign(buildButtonOption(), false);
 	}
 
-	@SimpleFunction("Clears the credential state kept by Credential Manager so the"
+	@SimpleFunction("Clears the credential state kept by Credential Manager so the "
 			+ "user is not signed back in automatically. Triggers SignedOut when done.")
 	public void SignOut() {
 		credentialManager.clearCredentialStateAsync(
@@ -99,7 +109,6 @@ public class GCM extends AndroidNonvisibleComponent {
 				public void onResult(Void result) {
 					SignedOut();
 				}
-
 				@Override
 				public void onError(ClearCredentialException err) {
 					ErrorOccurred(err.getMessage());
@@ -108,16 +117,25 @@ public class GCM extends AndroidNonvisibleComponent {
 		);
 	}
 
-	private void requestGoogleId(boolean authorizedOnly) {
+	// Credential option: Sheet flow.
+	private GetGoogleIdOption buildSheetOption(boolean authorizedOnly) {
+		return new GetGoogleIdOption.Builder()
+			.setServerClientId(webClientId)
+			.setFilterByAuthorizedAccounts(authorizedOnly)
+			.setAutoSelectEnabled(autoSelect && authorizedOnly)
+			.build();
+	}
+
+	// Credential option: button flow.
+	private GetSignInWithGoogleOption buildButtonOption() {
+		return new GetSignInWithGoogleOption.Builder(webClientId).build();
+	}
+
+	// Shared sign in function for sheet and button.
+	private void handleSign(CredentialOption option, boolean allowFallback) {
 		// Cancel any flow still in progress
 		if (cancellationSignal != null) cancellationSignal.cancel();
 		cancellationSignal = new CancellationSignal();
-
-		GetGoogleIdOption option = new GetGoogleIdOption.Builder()
-			.setServerClientId(webClientId)
-			.setFilterByAuthorizedAccounts(authorizedOnly)
-			.setAutoSelectEnabled(autoSelect)
-			.build();
 
 		GetCredentialRequest request = new GetCredentialRequest
 			.Builder()
@@ -161,8 +179,12 @@ public class GCM extends AndroidNonvisibleComponent {
 				}
 				@Override
 				public void onError(GetCredentialException err) {
-					if (authorizedOnly && err instanceof NoCredentialException) {
-						requestGoogleId(false);
+					if (err instanceof NoCredentialException) {
+						if (allowFallback) {
+							handleSign(buildSheetOption(false), false);
+						} else {
+							ErrorOccurred("No Google account is available on this device.");
+						}
 					} else if (err instanceof GetCredentialCancellationException) {
 						SignInCancelled();
 					} else {
