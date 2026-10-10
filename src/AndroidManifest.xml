@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.yashsrv.credentialmanager.credentialmanager">
+  package="com.yashsrv.gcm">
 
   <application>
-    <!-- You can use any manifest tag that goes inside the <application> tag -->
-    <!-- <service android:name="com.example.MyService"> ... </service> -->
+		<service
+			android:name="androidx.credentials.playservices.CredentialProviderMetadataHolder"
+			android:exported="true"
+			android:enabled="true">
+			<meta-data
+				android:name="androidx.credentials.CREDENTIAL_PROVIDER_KEY"
+				android:value="androidx.credentials.playservices.CredentialProviderPlayServicesImpl" />
+    </service>
+
+    <meta-data
+			android:name="com.google.android.gms.version"
+			android:value="@integer/google_play_services_version" />
+		
+		<activity
+    android:name="androidx.credentials.playservices.controllers.identityauth.HiddenActivity"
+		android:theme="@android:style/Theme.Translucent.NoTitleBar"
+    android:exported="false" />
   </application>
-
-  <!-- Other than <application> level tags, you can use <uses-permission> & <queries> tags -->
-  <!-- <uses-permission android:name="android.permission.INTERNET"/> -->
-  <!-- <queries> ... </queries> -->
-
+	
+  <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
