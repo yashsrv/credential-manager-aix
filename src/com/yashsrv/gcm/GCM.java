@@ -207,7 +207,7 @@ public class GCM extends AndroidNonvisibleComponent {
 		});
 	}
 
-	@SimpleEvent("Fired when sign-in or sign-out fails."
+	@SimpleEvent("Fired when sign-in or sign-out fails. "
 			+ "errorMessage describes what went wrong.")
 	public void ErrorOccurred(String errorMessage) {
 		form.runOnUiThread(new Runnable() {
