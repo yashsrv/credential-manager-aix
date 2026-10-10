@@ -52,7 +52,7 @@ gen_docs: false
 # Enable to generate blocks with shadow blocks. (premium)
 shadow_blocks: false
 # Enable to increment the version number of each component during build.
-auto_version: true
+auto_version: false
 # Enable to remove @annotations from the extension.
 deannonate: true
 # Enable to skip matching classes provided by AI2.

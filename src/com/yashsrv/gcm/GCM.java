@@ -31,7 +31,7 @@ import com.google.appinventor.components.runtime.ComponentContainer;
 import com.google.appinventor.components.runtime.EventDispatcher;
 
 @DesignerComponent(
-	version = 110,
+	version = 1,
 	versionName = "1.0",
 	description = "Google Credential Manager. Developed by Yash Srivastava.",
 	iconName = "icon.png"
